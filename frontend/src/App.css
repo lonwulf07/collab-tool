@@ -19,10 +19,14 @@
   font-family: "Inter", sans-serif;
 }
 
+/* 1. MOBILE VIEWPORT FIX */
+html,
 body {
+  height: 100%; /* Fallback */
+  height: 100dvh; /* Modern mobile dynamic height */
   background-color: var(--bg-dark);
   color: var(--text-main);
-  overflow: hidden; /* Prevent body scroll on mobile */
+  overflow: hidden; /* Traps everything inside */
 }
 
 /* --- Animations --- */
@@ -51,7 +55,8 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  height: 100%;
+  height: 100dvh;
   padding: 20px;
   background: radial-gradient(circle at top left, #1e293b, var(--bg-dark));
 }
@@ -163,9 +168,11 @@ body {
 /* --- Main App Layout --- */
 .app-container {
   display: flex;
-  height: 100vh;
+  height: 100%;
+  height: 100dvh;
   width: 100vw;
   position: relative;
+  overflow: hidden;
 }
 
 /* --- Sidebar --- */
@@ -177,6 +184,7 @@ body {
   border-right: 1px solid var(--border);
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 100;
+  flex-shrink: 0;
 }
 
 .sidebar-header {
@@ -297,11 +305,13 @@ body {
 
 /* --- Chat Area --- */
 .chat-area {
-  flex-grow: 1;
+  flex: 1;
   display: flex;
   flex-direction: column;
   background-color: var(--bg-dark);
   position: relative;
+  min-width: 0; /* 2. FLEXBOX OVERFLOW FIX */
+  min-height: 0; /* 2. FLEXBOX OVERFLOW FIX */
 }
 
 .chat-header {
@@ -311,6 +321,7 @@ body {
   display: flex;
   align-items: center;
   gap: 15px;
+  flex-shrink: 0; /* Prevents header from hiding */
 }
 
 .mobile-menu-btn {
@@ -323,13 +334,14 @@ body {
 }
 
 .chat-feed {
-  flex-grow: 1;
+  flex: 1;
   padding: 20px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 20px;
   scroll-behavior: smooth;
+  min-height: 0; /* Forces internal scrolling instead of parent stretching */
 }
 
 .message-wrapper {
@@ -385,6 +397,7 @@ body {
   padding: 20px;
   background-color: var(--bg-panel);
   border-top: 1px solid var(--border);
+  flex-shrink: 0; /* Prevents input box from hiding */
 }
 
 .chat-input {
@@ -413,27 +426,30 @@ body {
     display: block;
   }
 
+  /* 3. SIDEBAR FIX */
   .sidebar {
-    position: absolute;
+    position: fixed; /* Changed from absolute to fixed */
     top: 0;
     left: 0;
     height: 100%;
+    height: 100dvh;
     transform: translateX(-100%);
+    z-index: 999; /* Boosted to absolute top */
   }
 
   .sidebar.open {
     transform: translateX(0);
-    box-shadow: 10px 0 25px rgba(0, 0, 0, 0.5);
+    box-shadow: 10px 0 25px rgba(0, 0, 0, 0.8);
   }
 
   .sidebar-overlay {
-    position: absolute;
+    position: fixed; /* Changed from absolute to fixed */
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: 100dvh;
     background: rgba(0, 0, 0, 0.6);
-    z-index: 90;
+    z-index: 998; /* Just beneath the sidebar */
     backdrop-filter: blur(2px);
   }
 

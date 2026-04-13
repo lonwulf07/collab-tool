@@ -23,13 +23,37 @@ function App() {
     const token = localStorage.getItem("token");
     const savedUsername = localStorage.getItem("username");
 
-    if (token && savedUsername) {
-      socket.auth = { token };
-      socket.connect();
-      setUsername(savedUsername);
-      setHasJoined(true);
-      socket.emit("join_room", "general");
-    }
+    const verifySession = async () => {
+      if (token && savedUsername) {
+        try {
+          const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+          const res = await fetch(`${BACKEND_URL}/verify`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: savedUsername, token }),
+          });
+
+          const data = await res.json();
+
+          if (data.valid) {
+            // User exists and token is good! Let them in.
+            socket.auth = { token };
+            socket.connect();
+            setUsername(savedUsername);
+            setHasJoined(true);
+            socket.emit("join_room", "general");
+          } else {
+            // User was deleted or token expired. Clear the ghost session.
+            handleLogout();
+          }
+        } catch (err) {
+          console.error("Session verification failed", err);
+          handleLogout();
+        }
+      }
+    };
+
+    verifySession();
   }, []);
 
   const handleLogout = () => {
@@ -69,13 +93,15 @@ function App() {
     });
 
     socket.on("message_edited", ({ id, newText }) => {
-      setChatFeed(prev => prev.map(msg => 
-        msg.id === id ? { ...msg, text: newText, isEdited: true } : msg
-      ));
+      setChatFeed((prev) =>
+        prev.map((msg) =>
+          msg.id === id ? { ...msg, text: newText, isEdited: true } : msg,
+        ),
+      );
     });
 
     socket.on("message_deleted", (id) => {
-      setChatFeed(prev => prev.filter(msg => msg.id !== id));
+      setChatFeed((prev) => prev.filter((msg) => msg.id !== id));
     });
 
     socket.on("active_users", (users) => setActiveUsers(users));

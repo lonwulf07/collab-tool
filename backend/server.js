@@ -6,9 +6,9 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("./models/User");
-const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
-const multer = require('multer');
+const cloudinary = require("cloudinary").v2;
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const multer = require("multer");
 
 require("dotenv").config();
 
@@ -16,10 +16,12 @@ const Message = require("./models/Message");
 
 const app = express();
 
-app.use(cors({
-  origin: "*", // Allows requests from any frontend domain
-  methods: ["GET", "POST"]
-}));
+app.use(
+  cors({
+    origin: "*", // Allows requests from any frontend domain
+    methods: ["GET", "POST"],
+  }),
+);
 
 app.use(express.json());
 
@@ -27,11 +29,11 @@ app.use(express.json());
 const server = http.createServer(app);
 
 // Initialize Socket.io and configure CORS for the frontend
-const io = require('socket.io')(server, {
+const io = require("socket.io")(server, {
   cors: {
-    origin: "*", 
-    methods: ["GET", "POST"]
-  }
+    origin: "*",
+    methods: ["GET", "POST"],
+  },
 });
 
 // MongoDB connection
@@ -44,19 +46,18 @@ mongoose
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'collab-space', // The folder name inside your Cloudinary account
-    allowed_formats: ['jpg', 'png', 'jpeg', 'gif', 'webp']
+    folder: "collab-space", // The folder name inside your Cloudinary account
+    allowed_formats: ["jpg", "png", "jpeg", "gif", "webp"],
   },
 });
 
 const upload = multer({ storage: storage });
-
 
 // --- REST API AUTHENTICATION ROUTES ---
 
@@ -110,8 +111,29 @@ app.post("/login", async (req, res) => {
   }
 });
 
+// TOKEN VERIFICATION ROUTE
+app.post("/verify", async (req, res) => {
+  try {
+    const { username, token } = req.body;
+
+    // 1. Check if the token is mathematically valid and not expired
+    jwt.verify(token, process.env.JWT_SECRET);
+
+    // 2. Check if the user STILL exists in the database
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(401).json({ valid: false }); // User was deleted!
+    }
+
+    res.status(200).json({ valid: true });
+  } catch (err) {
+    // If token is expired or manipulated, it throws an error and lands here
+    res.status(401).json({ valid: false });
+  }
+});
+
 // --- IMAGE UPLOAD ROUTE ---
-app.post('/upload', upload.single('image'), (req, res) => {
+app.post("/upload", upload.single("image"), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "No image file provided" });
   }
@@ -202,28 +224,31 @@ io.on("connection", (socket) => {
         senderId: savedMessage.senderId,
         room: savedMessage.room,
         isEdited: savedMessage.isEdited,
-        timestamp: new Date(savedMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        timestamp: new Date(savedMessage.createdAt).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
       };
 
-      io.to(data.room).emit('receive_message', finalMessage);
+      io.to(data.room).emit("receive_message", finalMessage);
     } catch (error) {
       console.error("Error saving message:", error);
     }
   });
 
-  socket.on('edit_message', async ({ id, newText, room }) => {
+  socket.on("edit_message", async ({ id, newText, room }) => {
     try {
       await Message.findByIdAndUpdate(id, { text: newText, isEdited: true });
-      io.to(room).emit('message_edited', { id, newText });
+      io.to(room).emit("message_edited", { id, newText });
     } catch (err) {
       console.error("Error editing message:", err);
     }
   });
 
-  socket.on('delete_message', async ({ id, room }) => {
+  socket.on("delete_message", async ({ id, room }) => {
     try {
       await Message.findByIdAndDelete(id);
-      io.to(room).emit('message_deleted', id);
+      io.to(room).emit("message_deleted", id);
     } catch (err) {
       console.error("Error deleting message:", err);
     }
@@ -231,15 +256,15 @@ io.on("connection", (socket) => {
 
   // --- FETCH SINGLE MESSAGE FOR REFERENCES ---
   // The frontend provides the ID, and we use a callback function to send the data back immediately
-  socket.on('fetch_single_message', async (id, callback) => {
+  socket.on("fetch_single_message", async (id, callback) => {
     try {
       const msg = await Message.findById(id);
       if (msg) {
-        callback({ 
-          id: msg._id, 
-          text: msg.text, 
-          senderId: msg.senderId, 
-          room: msg.room 
+        callback({
+          id: msg._id,
+          text: msg.text,
+          senderId: msg.senderId,
+          room: msg.room,
         });
       } else {
         callback(null); // Message might have been deleted!
