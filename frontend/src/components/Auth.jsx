@@ -46,6 +46,8 @@ const Auth = ({ socket, setUsername, setHasJoined }) => {
         socket.auth = { token: data.token };
         socket.connect();
 
+        socket.emit("join_room", "general");
+
         setUsername(data.username);
         setHasJoined(true);
 
