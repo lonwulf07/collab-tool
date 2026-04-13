@@ -1,4 +1,4 @@
-# Collab Space 💬
+# Collab Tool 💬
 
 A full-stack, real-time communication platform engineered with the MERN stack and Socket.io. Designed with a focus on low-latency bidirectional messaging, robust state management, and a highly polished, responsive UI.
 
