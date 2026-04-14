@@ -6,7 +6,7 @@ A full-stack, real-time communication platform engineered with the MERN stack an
 
 **[🚀 View Live Project](https://collab-tool-ten.vercel.app/)**
 
-## Project Screenshot
+## 📸 Project Screenshot
 
 <img width="1920" height="930" alt="2026-04-14 12_02_06-" src="https://github.com/user-attachments/assets/2d708fc6-8d2d-4651-aa27-299f7e65ae30" />
 
